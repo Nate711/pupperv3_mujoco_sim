@@ -1,5 +1,5 @@
 # Prereqs
-Clone "pupper_interfaces" package into your ROS2 workspace src folder
+Clone "pupper_interfaces" package (https://github.com/Nate711/pupper_interfaces) into your ROS2 workspace src folder
 
 # Install
 Clone this repo into your ROS2 workspace src folder
