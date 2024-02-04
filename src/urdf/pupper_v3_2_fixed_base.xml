@@ -1,0 +1,27 @@
+<mujoco model="pupper_v3_2_fixed">
+  <compiler angle="radian" />
+
+  <default>
+    <motor forcelimited="true" forcerange="-3 3" ctrlrange="-3 3" ctrllimited="true" />
+    <geom condim="1" friction="1.0" solimp=".9 .99 .003" solref=".015 1" />
+    <joint armature="0.0016" type="hinge" damping="0.0001" frictionloss="0.01" limited="true"
+      solimplimit="0 .99 .01" />
+  </default>
+
+  <worldbody>
+    <light name="spotlight" mode="targetbodycom" target="leg_front_r_1" diffuse=".8 .8 .8"
+      specular="0.3 0.3 0.3" pos="0 -4 4" cutoff="100" />
+    <geom size="0.132095 0.06626 0.055" pos="0.02009 0 0.03177" quat="0.707105 0.707108 0 0"
+      type="box" rgba="0.70196 0.70196 0.70196 1" />
+    <include file="pupper_v3_2.xml" />
+  </worldbody>
+
+  <sensor>
+    <gyro name="body_gyro" site="torso_imu_site" />
+    <accelerometer name="body_acc" site="torso_imu_site" />
+  </sensor>
+
+  <include
+    file="pupper_v3_actuators.xml" />
+
+</mujoco>
