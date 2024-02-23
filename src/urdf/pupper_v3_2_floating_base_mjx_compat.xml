@@ -14,7 +14,7 @@
 
   <default>
     <motor forcelimited="true" forcerange="-3 3" ctrlrange="-3 3" ctrllimited="true" />
-    <geom condim="1" friction="1.0" solimp=".9 .99 .003" solref=".015 1" />
+    <geom condim="3" friction="1.0" solimp=".9 .99 .003" solref=".015 1" />
     <joint armature="0.0016" type="hinge" damping="0.0001" frictionloss="0.01" limited="true"
       solimplimit="0 .99 .01" />
   </default>
