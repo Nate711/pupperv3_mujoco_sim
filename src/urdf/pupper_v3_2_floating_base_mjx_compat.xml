@@ -1,0 +1,44 @@
+<mujoco model="pupper_v3_2_floating">
+  <compiler angle="radian" />
+
+  <!-- ground plane -->
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1=".3 .5 .7" rgb2="0 0 0" width="512" height="512" />
+    <texture name="body" type="cube" builtin="flat" mark="cross" width="127" height="1278"
+      rgb1="0.8 0.6 0.4" rgb2="0.8 0.6 0.4" markrgb="1 1 1" random="0.01" />
+    <material name="body" texture="body" texuniform="true" rgba="0.8 0.6 .4 1" />
+    <texture name="grid" type="2d" builtin="checker" width="512" height="512" rgb1=".1 .2 .3"
+      rgb2=".2 .3 .4" />
+    <material name="grid" texture="grid" texrepeat="1 1" texuniform="true" reflectance=".2" />
+  </asset>
+
+  <default>
+    <motor forcelimited="true" forcerange="-3 3" ctrlrange="-3 3" ctrllimited="true" />
+    <geom condim="1" friction="1.0" solimp=".9 .99 .003" solref=".015 1" />
+    <joint armature="0.0016" type="hinge" damping="0.0001" frictionloss="0.01" limited="true"
+      solimplimit="0 .99 .01" />
+  </default>
+
+  <worldbody>
+    <geom name="floor" size="0 0 .05" type="plane" material="grid" condim="3" />
+    <light name="spotlight" mode="targetbodycom" target="torso" diffuse=".8 .8 .8"
+      specular="0.3 0.3 0.3" pos="0 -4 4" cutoff="100" />
+
+    <body name="torso" pos="0 0 0.2">
+      <freejoint name="root" />
+      <inertial pos="0 0 0" mass="1.600" diaginertia="2e-03 2e-03 2e-03" />
+      <geom
+        size="0.132095 0.06626 0.055" pos="0.02009 0 0.03177" quat="0.707105 0.707108 0 0"
+        type="box" rgba="0.70196 0.70196 0.70196 1" />
+      <include file="pupper_v3_2_mjx_compat.xml" />
+    </body>
+  </worldbody>
+
+  <sensor>
+    <gyro name="body_gyro" site="torso_imu_site" />
+    <accelerometer name="body_acc" site="torso_imu_site" />
+  </sensor>
+
+  <include
+    file="pupper_v3_actuators.xml" />
+</mujoco>
