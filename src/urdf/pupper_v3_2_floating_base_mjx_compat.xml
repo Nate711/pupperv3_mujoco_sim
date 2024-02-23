@@ -21,6 +21,9 @@
   </default>
 
   <worldbody>
+    <camera name="fixed_camera" pos="0.234 -0.387 0.466"
+      xyaxes="0.806 0.592 0.000 -0.395 0.538 0.745" />
+
     <geom name="floor" size="0 0 .05" type="plane" material="grid" condim="3" />
     <light name="spotlight" mode="targetbodycom" target="torso" diffuse=".8 .8 .8"
       specular="0.3 0.3 0.3" pos="0 -4 4" cutoff="100" />
