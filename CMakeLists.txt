@@ -18,6 +18,8 @@ find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(pupper_interfaces)
 find_package(builtin_interfaces REQUIRED)
+find_package(pluginlib REQUIRED)
+find_package(hardware_interface REQUIRED)
 
 include_directories(${CMAKE_SOURCE_DIR}/lib)
 
@@ -73,11 +75,34 @@ ament_target_dependencies(
 add_executable(mujoco_interactive_test src/mujoco_interactive_test.cpp src/uitools.c)
 target_link_libraries(mujoco_interactive_test mujoco_interactive_node)
 
+add_library(mujoco_hardware_interface SHARED lib/mujoco_hardware_interface.cpp)
+target_link_libraries(mujoco_hardware_interface mujoco::mujoco glfw)
+ament_target_dependencies(
+  mujoco_hardware_interface
+  rclcpp
+  pluginlib
+  hardware_interface
+  std_msgs
+  sensor_msgs
+  tf2
+  tf2_ros
+  builtin_interfaces
+  rclcpp_lifecycle
+)
+
+pluginlib_export_plugin_description_file(hardware_interface mujoco_hardware_interface.xml)
+
+install(TARGETS mujoco_hardware_interface DESTINATION lib)
+install(DIRECTORY lib/ DESTINATION lib)
+
+ament_export_include_directories(lib)
+ament_export_libraries(mujoco_hardware_interface)
+ament_export_dependencies(hardware_interface pluginlib rclcpp rclcpp_lifecycle transmission_interface)
+
 install(TARGETS basic DESTINATION lib/${PROJECT_NAME})
 install(TARGETS simulate DESTINATION lib/${PROJECT_NAME})
-# install(TARGETS mujoco_core_test DESTINATION lib/${PROJECT_NAME})
-# install(TARGETS mujoco_node_test DESTINATION lib/${PROJECT_NAME})
 install(TARGETS mujoco_interactive_test DESTINATION lib/${PROJECT_NAME})
+
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
 install(DIRECTORY test/launch DESTINATION share/${PROJECT_NAME}/)
 install(DIRECTORY src/urdf DESTINATION share/${PROJECT_NAME}/src)
