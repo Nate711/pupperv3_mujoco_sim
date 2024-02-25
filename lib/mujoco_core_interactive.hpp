@@ -2036,6 +2036,9 @@ static void run_gui_blocking() {
     std::cout << "---------------- SIM LAMBDA DESTRUCTOR CALLED -----------" << std::endl;
   });
 
+  // Move the context to this thread
+  glfwMakeContextCurrent(window);
+
   while (gui_is_alive()) {
     render_block();
   }
@@ -2251,6 +2254,8 @@ static void calibrate_motors() {
   // start thread
   calibrate_thread_ = std::make_shared<std::thread>(calibrate_motors_thread);
 }
+
+static void detach_opengl_context_from_thread() { glfwMakeContextCurrent(nullptr); }
 
 };  // namespace mujoco_interactive
 

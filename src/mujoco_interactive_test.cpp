@@ -56,7 +56,10 @@ int main(int argc, char *argv[]) {
   node_ptr->calibrate_motors();
 
   // Begin GUI
-  node_ptr->run_gui_blocking();
+  std::thread run_gui([node_ptr]() { node_ptr->run_gui_blocking(); });
+  while (true) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+  }
 
   std::cout << "---------CALLING RCLCPP SHUTDOWN----------" << std::endl;
   rclcpp::shutdown();

@@ -37,6 +37,10 @@ MujocoInteractiveNode::MujocoInteractiveNode(
   mujoco_interactive::set_timestep(timestep);
   mujoco_interactive::set_actuator_models(actuator_models);
 
+  // Necessary if you want to run rendering in a different thread than
+  // the one this Node was created in
+  mujoco_interactive::detach_opengl_context_from_thread();
+
   n_actuators_ = mujoco_interactive::n_actuators();
   RCLCPP_INFO(this->get_logger(), "n_actuators = %d", n_actuators_);
 
