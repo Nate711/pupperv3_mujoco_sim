@@ -2044,6 +2044,11 @@ static void run_gui_blocking() {
   }
 }
 
+static void run_gui_detached() {
+  std::thread run_gui(run_gui_blocking);
+  run_gui.detach();
+}
+
 // TODO: bad pointer is passed by value?
 static void check_model(mjModel *m) {
   if (!m) {
@@ -2200,7 +2205,7 @@ static ActuatorCommand zero_command(const int &nu) {
 }
 
 // TODO: ONCE IN A WHILE THROWS OUT OF BOUNDS
-static void calibrate_motors_thread() {
+static void calibrate_motors_blocking() {
   std::cout << "------------ BEGINNING CALIBRATION ----------" << std::endl;
   using namespace std::chrono_literals;
 
@@ -2250,9 +2255,10 @@ static void calibrate_motors_thread() {
 
 static bool is_robot_calibrated() { return is_robot_calibrated_; }
 
-static void calibrate_motors() {
-  // start thread
-  calibrate_thread_ = std::make_shared<std::thread>(calibrate_motors_thread);
+static void calibrate_motors_detached() {
+  // start calibration in separate thread
+  std::thread calibrate_thread(calibrate_motors_blocking);
+  calibrate_thread.detach();
 }
 
 static void detach_opengl_context_from_thread() { glfwMakeContextCurrent(nullptr); }

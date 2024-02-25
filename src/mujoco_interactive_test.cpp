@@ -1,18 +1,8 @@
-#include "mujoco_core_interactive.hpp"
-
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
 #include "actuator_model.hpp"
 #include "mujoco_interactive_node.hpp"
 
-// TODO:
-/*
-1) Ctrl-c from terminal seems to do nothing
-
-Desired behavior: ctrl-c stops the simulation and calls destructors on
-simulation variables and on node
-
-*/
 int main(int argc, char *argv[]) {
   rclcpp::init(argc, argv);
 
@@ -45,22 +35,23 @@ int main(int argc, char *argv[]) {
 
   std::shared_ptr<MujocoInteractiveNode> node_ptr;
   node_ptr = std::make_shared<MujocoInteractiveNode>(joint_names, actuator_models);
+
+  // Start mujoco physics simulation thread
   node_ptr->start_simulation();
 
+  // Start calibration thread
+  node_ptr->calibrate_motors_detached();
+
+  // Start GUI thread
+  node_ptr->run_gui_detached();
+
+  // Doesn't work because method is static and therefore this instantiates a new version of
+  // mujoco_core_interactive.hpp
+  // std::thread run_gui([]() { mujoco_interactive::run_gui_blocking(); });
+  // mujoco_interactive::run_gui_detached();
+
   // Start spinning node callbacks
-  std::thread spin_thread([node_ptr]() {
-    rclcpp::spin(node_ptr);
-    rclcpp::shutdown();
-  });
-
-  node_ptr->calibrate_motors();
-
-  // Begin GUI
-  std::thread run_gui([node_ptr]() { node_ptr->run_gui_blocking(); });
-  while (true) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-  }
-
+  rclcpp::spin(node_ptr);
   std::cout << "---------CALLING RCLCPP SHUTDOWN----------" << std::endl;
   rclcpp::shutdown();
   return 0;

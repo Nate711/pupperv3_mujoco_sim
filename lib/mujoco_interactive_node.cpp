@@ -57,9 +57,13 @@ MujocoInteractiveNode::~MujocoInteractiveNode() {
 
 void MujocoInteractiveNode::run_gui_blocking() { mujoco_interactive::run_gui_blocking(); }
 
+void MujocoInteractiveNode::run_gui_detached() { mujoco_interactive::run_gui_detached(); }
+
 void MujocoInteractiveNode::start_simulation() { mujoco_interactive::start_simulation(); }
 
-void MujocoInteractiveNode::calibrate_motors() { mujoco_interactive::calibrate_motors(); }
+void MujocoInteractiveNode::calibrate_motors_detached() {
+  mujoco_interactive::calibrate_motors_detached();
+}
 
 void MujocoInteractiveNode::make_pub_subs(const float publish_rate) {
   clock_publisher_ = this->create_publisher<rosgraph_msgs::msg::Clock>("/clock", 1);
