@@ -1,0 +1,45 @@
+<mujoco model="segway_model">
+    <compiler angle="radian" />
+
+    <!-- Assets -->
+    <asset>
+        <texture type="skybox" builtin="gradient" rgb1=".3 .5 .7" rgb2="0 0 0" width="512"
+            height="512" />
+        <texture name="grid" type="2d" builtin="checker" width="512" height="512" rgb1=".1 .2 .3"
+            rgb2=".2 .3 .4" />
+        <material name="grid" texture="grid" texrepeat="10 10" texuniform="true" reflectance=".2" />
+    </asset>
+
+    <!-- Default settings -->
+    <default>
+        <motor forcelimited="true" forcerange="-50 50" ctrlrange="-1 1" ctrllimited="true" />
+        <geom condim="3" friction="1.0 0.1 0.1" solimp=".9 .9 .01" solref=".02 1" />
+        <joint armature="0.01" damping="0.01" frictionloss="0.1" />
+    </default>
+
+    <!-- Worldbody -->
+    <worldbody>
+        <camera name="fixed" pos="0 -3 1" zaxis="0 0 1" />
+        <light directional="true" diffuse=".8 .8 .8" specular=".2 .2 .2" dir="0 -1 -2" />
+
+        <!-- Floor -->
+        <geom name="floor" type="plane" size="10 10 .1" material="grid" />
+
+        <!-- Segway body -->
+        <body name="segway" pos="0 0 1">
+            <joint name="segway_sideways" type="free" limited="false" />
+            <geom type="box" size="0.1 0.1 0.5" rgba="0.5 0.5 0.5 1" />
+
+            <!-- Wheels -->
+            <body name="left_wheel" pos="0 -0.15 -0.6">
+                <joint name="left_wheel_hinge" type="hinge" axis="0 1 0" limited="false" />
+                <geom type="cylinder" size="0.15 0.05" rgba="0 0 0 1" zaxis="0 1 0" />
+            </body>
+            <body name="right_wheel" pos="0 0.15 -0.6">
+                <joint name="right_wheel_hinge" type="hinge" axis="0 1 0" limited="false" />
+                <geom type="cylinder" size="0.15 0.05" rgba="0 0 0 1" zaxis="0 1 0" />
+            </body>
+        </body>
+    </worldbody>
+</mujoco>
+  
