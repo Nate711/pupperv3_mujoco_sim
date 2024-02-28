@@ -75,7 +75,7 @@ ament_target_dependencies(
 add_executable(mujoco_interactive_test src/mujoco_interactive_test.cpp src/uitools.c)
 target_link_libraries(mujoco_interactive_test mujoco_interactive_node)
 
-add_library(mujoco_hardware_interface SHARED lib/mujoco_hardware_interface.cpp)
+add_library(mujoco_hardware_interface SHARED lib/mujoco_hardware_interface.cpp lib/uitools.c)
 target_link_libraries(mujoco_hardware_interface mujoco::mujoco glfw)
 ament_target_dependencies(
   mujoco_hardware_interface
