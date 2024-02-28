@@ -2194,7 +2194,7 @@ static std::array<double, 3> base_velocity() {
   }
 }
 
-static ActuatorCommand zero_command(const int &nu) {
+static ActuatorCommand zero_command(int nu) {
   ActuatorCommand command;
   command.kp = std::vector<double>(nu, 0.0);
   command.kd = std::vector<double>(nu, 0.0);

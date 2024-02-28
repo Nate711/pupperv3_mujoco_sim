@@ -21,6 +21,7 @@ def generate_launch_description():
                         "timestep": 0.001,
                     }
                 ],
+                # prefix="xterm -e gdb -ex=r --args",
             )
         ]
     )

@@ -46,10 +46,6 @@ class MujocoHardwareInterface : public hardware_interface::SystemInterface {
                                         const rclcpp::Duration &period) override;
 
  private:
-  void copy_actuator_commands(bool use_position_limits = false);
-  void copy_actuator_states();
-  void do_homing();
-
   // IMU state
   std::array<double, 4> hw_state_imu_orientation_;          // x, y, z, w
   std::array<double, 3> hw_state_imu_angular_velocity_;     // x, y, z

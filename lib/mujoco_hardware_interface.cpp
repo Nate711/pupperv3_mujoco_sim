@@ -21,6 +21,9 @@
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "rclcpp/rclcpp.hpp"
 
+#include "actuator_model.hpp"
+#include "mujoco_core_interactive.hpp"
+
 namespace mujoco_hardware_interface {
 MujocoHardwareInterface::~MujocoHardwareInterface() {
   // Deactivate everything when ctrl-c is pressed
@@ -72,6 +75,45 @@ hardware_interface::CallbackReturn MujocoHardwareInterface::on_init(
   //   // Set up the IMU
   //   imu_ = new BNO055(IMU_I2C_DEVICE_NUMBER);
 
+  // Set up mujoco simulation
+  mujoco_interactive::init();
+  // TODO filename should be passed as parameter
+  std::string model_xml =
+      "/home/parallels/pupperv3_ws/src/pupper_mujoco_sim/src/urdf/pupper_v3_2_floating_base.xml";
+  // std::string model_xml =
+  //     "/home/parallels/pupperv3_ws/src/pupper_mujoco_sim/src/urdf/pupper_v3_2_fixed_base.xml";
+  float timestep = 1e-4;
+  // Construct actuator models
+  // TODO get rid of kp and kd
+  // TODO set from xml file
+  ActuatorParams params(
+      /*kp=*/7.5,  // value used before command recvd. 7.5 is good for trotting
+      /*kd=*/0.5,  // value used before command recvd. 0.5 is good for trotting
+      /*bus_voltage =*/24.0,
+      /*kt=*/0.04,
+      /*phase_resistance=*/0.7,
+      /*saturation_torque=*/4.5,
+      /*software_torque_limit =*/3.0);
+  PIDActuatorModel actuator_model(params);
+  std::vector<std::shared_ptr<ActuatorModelInterface>> actuator_models(
+      info_.joints.size(), std::make_shared<PIDActuatorModel>(params));
+
+  mju::strcpy_arr(mujoco_interactive::filename, model_xml.c_str());
+  mujoco_interactive::settings.loadrequest = 1;
+  mujoco_interactive::loadmodel();
+  mujoco_interactive::set_timestep(timestep);
+  mujoco_interactive::set_actuator_models(actuator_models);
+
+  // Necessary if you want to run rendering in a different thread than
+  // the one this Node was created in
+  mujoco_interactive::detach_opengl_context_from_thread();
+
+  // Start physics simulation
+  mujoco_interactive::start_simulation();
+
+  // Start GUI thread
+  mujoco_interactive::run_gui_detached();
+
   return hardware_interface::CallbackReturn::SUCCESS;
 }
 
@@ -120,8 +162,8 @@ hardware_interface::CallbackReturn MujocoHardwareInterface::on_configure(
     hw_command_positions_[i] = 0.0;
     hw_command_velocities_[i] = 0.0;
     hw_command_efforts_[i] = 0.0;
-    hw_command_kps_[i] = 0.0;
-    hw_command_kds_[i] = 0.0;
+    hw_command_kps_[i] = 7.5;  // 0.0;
+    hw_command_kds_[i] = 0.5;  // 0.0;
   }
 
   RCLCPP_INFO(rclcpp::get_logger("MujocoHardwareInterface"), "Successfully configured!");
@@ -150,36 +192,33 @@ MujocoHardwareInterface::export_command_interfaces() {
 
 hardware_interface::CallbackReturn MujocoHardwareInterface::on_activate(
     const rclcpp_lifecycle::State & /*previous_state*/) {
-  // TODO(nathan-kau) zero out positions etc
-  // copies from weird spi struct to hw interface structs
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-  // TODO replace with calibrate motors blocking?
-  do_homing();
-
+  // Start calibration thread
+  mujoco_interactive::calibrate_motors_detached();
+  // You can comment out calibration and override calibration to be true if you want
+  // mujoco_interactive::is_robot_calibrated_ = true;
   RCLCPP_INFO(rclcpp::get_logger("MujocoHardwareInterface"), "Successfully activated!");
-
   return hardware_interface::CallbackReturn::SUCCESS;
 }
 
 hardware_interface::CallbackReturn MujocoHardwareInterface::on_deactivate(
     const rclcpp_lifecycle::State & /*previous_state*/) {
-  // Disable actuators
-  // TODO disable
-
+  // TODO disable actuators somehow
+  hw_command_kps_.resize(info_.joints.size(), 0.0);
   RCLCPP_INFO(rclcpp::get_logger("MujocoHardwareInterface"), "Successfully deactivated!");
-
   return hardware_interface::CallbackReturn::SUCCESS;
 }
 
 hardware_interface::return_type MujocoHardwareInterface::read(const rclcpp::Time & /*time*/,
                                                               const rclcpp::Duration &period) {
-  // Write to and read from the actuators
-  // TODO get act pos and vel from mujoco
+  hw_state_positions_ = mujoco_interactive::actuator_positions();
+  hw_state_velocities_ = mujoco_interactive::actuator_velocities();
 
-  // Print joint position
-  // RCLCPP_INFO(rclcpp::get_logger( MujocoHardwareInterface"), "Joint 0: %f",
-  // spi_data_->q_abad[1]);
+  RCLCPP_INFO(rclcpp::get_logger("MujocoHardwareInterface"),
+              "READ. state_pos: %f %f %f | %f %f %f | %f %f %f | %f %f %f",
+              hw_state_positions_.at(0), hw_state_positions_.at(1), hw_state_positions_.at(2),
+              hw_state_positions_.at(3), hw_state_positions_.at(4), hw_state_positions_.at(5),
+              hw_state_positions_.at(6), hw_state_positions_.at(7), hw_state_positions_.at(8),
+              hw_state_positions_.at(9), hw_state_positions_.at(10), hw_state_positions_.at(11));
 
   // Read the IMU
   // TODO get from mujoco
@@ -240,25 +279,30 @@ hardware_interface::return_type MujocoHardwareInterface::read(const rclcpp::Time
 
 hardware_interface::return_type MujocoHardwareInterface::write(
     const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/) {
-  copy_actuator_commands(true);
-  // TODO write to mujoco pos commands
+  if (!mujoco_interactive::is_robot_calibrated()) {
+    RCLCPP_ERROR(rclcpp::get_logger("MujocoHardwareInterface"),
+                 "Robot not calibrated. Skipping hw interface write");
+    return hardware_interface::return_type::OK;
+  }
+  RCLCPP_INFO(rclcpp::get_logger("MujocoHardwareInterface"),
+              "WRITE. com_pos: %f %f %f | %f %f %f | %f %f %f | %f %f %f",
+              hw_command_positions_.at(0), hw_command_positions_.at(1), hw_command_positions_.at(2),
+              hw_command_positions_.at(3), hw_command_positions_.at(4), hw_command_positions_.at(5),
+              hw_command_positions_.at(6), hw_command_positions_.at(7), hw_command_positions_.at(8),
+              hw_command_positions_.at(9), hw_command_positions_.at(10),
+              hw_command_positions_.at(11));
+  mujoco_interactive::ActuatorCommand command =
+      mujoco_interactive::zero_command(info_.joints.size());
+  for (int i = 0; i < info_.joints.size(); i++) {
+    command.kp = hw_command_kps_;
+    command.kd = hw_command_kds_;
+
+    command.position_target = hw_command_positions_;
+    command.velocity_target = hw_command_velocities_;
+    command.feedforward_torque = hw_command_efforts_;
+  }
+  mujoco_interactive::set_actuator_command(command);
   return hardware_interface::return_type::OK;
-}
-
-void MujocoHardwareInterface::do_homing() {
-  RCLCPP_INFO(rclcpp::get_logger("MujocoHardwareInterface"), "Homing actuators...");
-  // TODO calibrate motors here or just delete this func
-  RCLCPP_INFO(rclcpp::get_logger("MujocoHardwareInterface"), "Finished homing!");
-}
-
-void MujocoHardwareInterface::copy_actuator_commands(bool use_position_limits) {
-  // copies from hw_command_blah to spi controller variables
-  // TODO?
-}
-
-void MujocoHardwareInterface::copy_actuator_states() {
-  // write to hw_state_positions_ and hw_state_velocities_
-  // TODO?
 }
 
 }  // namespace mujoco_hardware_interface
