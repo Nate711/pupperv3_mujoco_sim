@@ -7,7 +7,7 @@
   <maintainer email="nathankau@gmail.com">nathan</maintainer>
   <license>TODO: License declaration</license>
 
-  <depend>pupper_interfaces</depend>
+  <depend>pupper_v3_description</depend>
   <depend>tf2</depend>
   <depend>tf2_ros</depend>
   <depend>builtin_interfaces</depend>
