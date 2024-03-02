@@ -14,12 +14,6 @@
     <include file="pupper_v3_2.xml" />
   </worldbody>
 
-  <sensor>
-    <gyro name="body_gyro" site="torso_imu_site" />
-    <accelerometer name="body_acc" site="torso_imu_site" />
-  </sensor>
-
-  <include
-    file="pupper_v3_actuators.xml" />
-
+  <include file="sensors.xml" />
+  <include file="pupper_v3_actuators.xml" />
 </mujoco>

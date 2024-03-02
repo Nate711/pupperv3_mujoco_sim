@@ -221,58 +221,31 @@ hardware_interface::return_type MujocoHardwareInterface::read(const rclcpp::Time
               hw_state_positions_.at(9), hw_state_positions_.at(10), hw_state_positions_.at(11));
 
   // Read the IMU
-  // TODO get from mujoco
+  std::vector<double> sensor_data = mujoco_interactive::sensor_data();
+  RCLCPP_INFO(rclcpp::get_logger("MujocoHardwareInterface"),
+              "Quat: %f %f %f %f | Gyro: %f %f %f | Acc: %f %f %f", sensor_data.at(0),
+              sensor_data.at(1), sensor_data.at(2), sensor_data.at(3), sensor_data.at(4),
+              sensor_data.at(5), sensor_data.at(6), sensor_data.at(7), sensor_data.at(8),
+              sensor_data.at(9));
 
-  tf2::Quaternion imu_quat, offset_quat, corrected_quat;
-  tf2::Matrix3x3 rotation_matrix;
+  // Note: We do not correct for the orientation of the IMU because we define it as
+  // aligned with body XYZ axes in the model xml
 
-  // Getting the original IMU quaternion
-  // TODO
-  // imu_quat.setValue(imu_output_.quat.x(), imu_output_.quat.y(), imu_output_.quat.z(),
-  //                   imu_output_.quat.w());
+  // Note: Mujoco puts real component first, which matches this constructor
+  hw_state_imu_orientation_[0] = sensor_data.at(1);  // x
+  hw_state_imu_orientation_[1] = sensor_data.at(2);  // y
+  hw_state_imu_orientation_[2] = sensor_data.at(3);  // z
+  hw_state_imu_orientation_[3] = sensor_data.at(0);  // w
 
-  // Setting the offset quaternion based on your YAW, PITCH, ROLL offsets
-  offset_quat.setRPY(imu_roll_, imu_pitch_, imu_yaw_);
-  offset_quat = offset_quat.inverse();
+  // Angular velocity of body in body-frame
+  hw_state_imu_angular_velocity_[0] = sensor_data.at(4);  // wx
+  hw_state_imu_angular_velocity_[1] = sensor_data.at(5);  // wy
+  hw_state_imu_angular_velocity_[2] = sensor_data.at(6);  // wz
 
-  // Applying the offset to the IMU quaternion
-  corrected_quat = imu_quat * offset_quat;
-  corrected_quat.normalize();  // Normalizing the quaternion to ensure it's a valid rotation
-
-  rotation_matrix.setRotation(offset_quat);
-
-  // Rotating the angular velocity
-  // TODO
-  tf2::Vector3 angular_velocity;
-  // tf2::Vector3 angular_velocity(imu_output_.gyro.x(), imu_output_.gyro.y(),
-  // imu_output_.gyro.z()); angular_velocity = rotation_matrix * angular_velocity;
-
-  // Rotating the linear acceleration
-  // TODO
-  tf2::Vector3
-      linear_acceleration;  //(imu_output_.acc.x(), imu_output_.acc.y(), imu_output_.acc.z());
-  linear_acceleration = rotation_matrix * linear_acceleration;
-
-  // Updating the state interfaces with corrected values
-  hw_state_imu_orientation_[0] = corrected_quat.x();
-  hw_state_imu_orientation_[1] = corrected_quat.y();
-  hw_state_imu_orientation_[2] = corrected_quat.z();
-  hw_state_imu_orientation_[3] = corrected_quat.w();
-
-  hw_state_imu_angular_velocity_[0] = angular_velocity.x();
-  hw_state_imu_angular_velocity_[1] = angular_velocity.y();
-  hw_state_imu_angular_velocity_[2] = angular_velocity.z();
-
-  hw_state_imu_linear_acceleration_[0] = linear_acceleration.x();
-  hw_state_imu_linear_acceleration_[1] = linear_acceleration.y();
-  hw_state_imu_linear_acceleration_[2] = linear_acceleration.z();
-
-  // Print the IMU
-  // RCLCPP_INFO(rclcpp::get_logger("MujocoHardwareInterface"), "IMU: %f, %f, %f, %f, %f, %f,
-  // %f, %f, %f, %f",
-  //     imu_output_.quat.x(), imu_output_.quat.y(), imu_output_.quat.z(), imu_output_.quat.w(),
-  //     imu_output_.acc.x(), imu_output_.acc.y(), imu_output_.acc.z(),
-  //     imu_output_.gyro.x(), imu_output_.gyro.y(), imu_output_.gyro.z());
+  // Linear acceleration of body in body-frame
+  hw_state_imu_linear_acceleration_[0] = sensor_data.at(7);  // ax
+  hw_state_imu_linear_acceleration_[1] = sensor_data.at(8);  // ay
+  hw_state_imu_linear_acceleration_[2] = sensor_data.at(9);  // az
 
   return hardware_interface::return_type::OK;
 }

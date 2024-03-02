@@ -2124,6 +2124,11 @@ static std::vector<double> actuator_efforts() {
   return std::vector<double>(d->ctrl, d->ctrl + n_actuators());
 }
 
+static std::vector<double> sensor_data() {
+  std::unique_lock<std::recursive_mutex> lock(mtx);
+  return std::vector<double>(d->sensordata, d->sensordata + m->nsensordata);
+}
+
 // Requires mtx (mutex for mujoco stuff) already locked
 static void update_ctrl_() {
   std::unique_lock<std::recursive_mutex> lock(latest_command_lock_);
@@ -2210,7 +2215,7 @@ static void calibrate_motors_blocking() {
   using namespace std::chrono_literals;
 
   // TODO: MAKE PARAMETERS
-  float kd = 1.5;
+  float kd = 3.0;
   float velocity_target = 0.5;
   std::vector<int> cal_directions = {-1, -1, 1, 1, 1, -1, -1, -1, 1, 1, 1, -1};
   float speed_threshold = 0.01;
