@@ -13,6 +13,8 @@
         <!-- <geom size="0.0265 0.0125" pos="0 0 0.034" quat="0.707105 0 -0.707108 0"
         type="cylinder"
             rgba="0.70196 0.70196 0.70196 1" /> -->
+        <geom size="0.0125 0.0265 0.0265" pos="0. 0 0.034" quat="0.707105 0.707108 0 0"
+            type="box" rgba="0.7 0.7 0.7 0.2" />
         <body name="leg_front_r_2" pos="0 0 0.034" quat="0.499998 -0.5 -0.500002 0.5" gravcomp="0">
             <inertial pos="-0.04555 -0.00233 0.05745" mass="0.2" diaginertia="0.0002 0.0002 0.0002" />
             <joint name="leg_front_r_2" pos="0 0 0" axis="0 0 1" range="-0.5236 0.87266" />
@@ -37,6 +39,8 @@
     <body name="leg_front_l_1" pos="0.075 0.05 0" quat="0.707105 -0.707108 0 0" gravcomp="0">
         <inertial pos="0.00263 8e-05 0.03455" mass="0.2" diaginertia="0.0002 0.0002 0.0002" />
         <joint name="leg_front_l_1" pos="0 0 0" axis="0 0 1" range="-2.0944 1.22173" />
+        <geom size="0.0125 0.0265 0.0265" pos="0. 0 0.034" quat="0.707105 0.707108 0 0"
+            type="box" rgba="0.7 0.7 0.7 0.2" />
         <!-- <geom size="0.0265 0.0125" pos="0 0 0.034" quat="9.38184e-07 -0.707105 9.38187e-07
         0.707108"
             type="cylinder" rgba="0.70196 0.70196 0.70196 1" /> -->
@@ -64,6 +68,8 @@
     <body name="leg_back_r_1" pos="-0.075 -0.05 0" quat="0.707105 0.707108 0 0" gravcomp="0">
         <inertial pos="0.00272 -1e-05 0.03409" mass="0.2" diaginertia="0.0002 0.0002 0.0002" />
         <joint name="leg_back_r_1" pos="0 0 0" axis="0 0 1" range="-1.22173 2.0944" />
+        <geom size="0.0125 0.0265 0.0265" pos="0. 0 0.034" quat="0.707105 0.707108 0 0"
+            type="box" rgba="0.7 0.7 0.7 0.2" />
         <!-- <geom size="0.0265 0.0125" pos="0 0 0.034" quat="0.707105 0 -0.707108 0"
         type="cylinder"
             rgba="0.70196 0.70196 0.70196 1" /> -->
@@ -91,6 +97,8 @@
     <body name="leg_back_l_1" pos="-0.075 0.05 0" quat="0.707105 -0.707108 0 0" gravcomp="0">
         <inertial pos="0.00263 8e-05 0.03455" mass="0.2" diaginertia="0.0002 0.0002 0.0002" />
         <joint name="leg_back_l_1" pos="0 0 0" axis="0 0 1" range="-2.0944 1.22173" />
+        <geom size="0.0125 0.0265 0.0265" pos="0. 0 0.034" quat="0.707105 0.707108 0 0"
+            type="box" rgba="0.7 0.7 0.7 0.2" />
         <!-- <geom size="0.0265 0.0125" pos="0 0 0.034" quat="9.38184e-07 -0.707105 9.38187e-07
         0.707108"
             type="cylinder" rgba="0.70196 0.70196 0.70196 1" /> -->

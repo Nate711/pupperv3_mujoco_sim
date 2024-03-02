@@ -29,7 +29,7 @@
 
     <body name="torso" pos="0 0 0.2">
       <freejoint name="root" />
-      <inertial pos="0 0 0" mass="1.500" diaginertia="2.4e-03 8.4e-03 8.4e-03" />
+      <inertial pos="0.023 0 0.014" mass="1.500" diaginertia="2.4e-03 8.4e-03 8.4e-03" />
       <geom
         size="0.132095 0.06626 0.055" pos="0.02009 0 0.03177" quat="0.707105 0.707108 0 0"
         type="box" rgba="0.7 0.7 0.7 0.2" />

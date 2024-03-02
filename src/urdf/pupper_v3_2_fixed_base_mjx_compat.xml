@@ -11,7 +11,7 @@
   </default>
 
   <worldbody>
-    <camera name="tracking_cam" mode="targetbody" target="torso" pos="0.5 -0.5 0.5" />
+    <camera name="tracking_cam" mode="targetbody" target="leg_front_r_1" pos="0.5 -0.5 0.5" />
 
     <light name="spotlight" mode="targetbodycom" target="leg_front_r_1" diffuse=".8 .8 .8"
       specular="0.3 0.3 0.3" pos="0 -4 4" cutoff="100" />
