@@ -122,8 +122,6 @@
                     rgba="0.62745 0.83922 1 1" />
             </body>
         </body>
-
-        <site name="torso_imu_site" pos="0 0 0" />
-
     </body>
+    <site name="torso_imu_site" pos="0.09 0 0.032" />
 </mujoco>
