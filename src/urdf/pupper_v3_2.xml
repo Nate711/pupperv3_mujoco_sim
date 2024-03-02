@@ -1,12 +1,4 @@
 <mujoco model="pupper_v3_2">
-    <!-- TODO: Why can't I specify defaults here? -->
-    <!-- <compiler angle="radian" meshdir="assets" autolimits="true" /> -->
-    <!-- <default>
-        <motor forcelimited="true" forcerange="-3 3" ctrlrange="-3 3" ctrllimited="true" />
-        <geom condim="1" friction="1.0" solimp=".9 .99 .003" solref=".015 1" />
-        <joint armature="0.0016" type="hinge" damping="0.0001" frictionloss="0.01" limited="true"
-            solimplimit="0 .99 .01" />
-    </default> -->
     <body name="leg_front_r_1" pos="0.075 -0.05 0" quat="0.707105 0.707108 0 0" gravcomp="0">
         <inertial pos="0.00272 -1e-05 0.03409" mass="0.2" diaginertia="0.0002 0.0002 0.0002" />
         <joint name="leg_front_r_1" pos="0 0 0" axis="0 0 1" range="-1.22173 2.0944" />

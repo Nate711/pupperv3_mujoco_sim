@@ -1,24 +1,7 @@
 <mujoco model="pupper_v3_2_floating">
-  <compiler angle="radian" meshdir="../meshes/obj" />
-
-  <!-- ground plane -->
-  <asset>
-    <texture type="skybox" builtin="gradient" rgb1=".3 .5 .7" rgb2="0 0 0" width="512" height="512" />
-    <texture name="body" type="cube" builtin="flat" mark="cross" width="127" height="1278"
-      rgb1="0.8 0.6 0.4" rgb2="0.8 0.6 0.4" markrgb="1 1 1" random="0.01" />
-    <material name="body" texture="body" texuniform="true" rgba="0.8 0.6 .4 1" />
-    <texture name="grid" type="2d" builtin="checker" width="512" height="512" rgb1=".1 .2 .3"
-      rgb2=".2 .3 .4" />
-    <material name="grid" texture="grid" texrepeat="1 1" texuniform="true" reflectance=".2" />
-    <mesh file="pupperv3_export.obj" />
-  </asset>
-
-  <default>
-    <motor forcelimited="true" forcerange="-3 3" ctrlrange="-3 3" ctrllimited="true" />
-    <geom condim="3" friction="1.0" solimp=".9 .99 .003" solref=".015 1" />
-    <joint armature="0.0016" type="hinge" damping="0.01" frictionloss="0.01" limited="true"
-      solimplimit="0 .99 .01" />
-  </default>
+  <include file="compiler_settings.xml" />
+  <include file="assets.xml" />
+  <include file="defaults.xml" />
 
   <worldbody>
     <camera name="tracking_cam" mode="targetbody" target="torso" pos="0.5 -0.5 0.5" />

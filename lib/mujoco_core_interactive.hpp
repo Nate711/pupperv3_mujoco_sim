@@ -2212,7 +2212,7 @@ static void calibrate_motors_blocking() {
   // TODO: MAKE PARAMETERS
   float kd = 1.5;
   float velocity_target = 0.5;
-  std::vector<int> cal_directions = {-1, 1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1};
+  std::vector<int> cal_directions = {-1, -1, 1, 1, 1, -1, -1, -1, 1, 1, 1, -1};
   float speed_threshold = 0.01;
   int calibration_threshold = 20;
   std::chrono::duration sleep_time = 1000us;
