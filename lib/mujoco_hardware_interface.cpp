@@ -18,6 +18,7 @@
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Vector3.h>
+#include <ament_index_cpp/get_package_share_directory.hpp>
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "rclcpp/rclcpp.hpp"
 
@@ -78,13 +79,17 @@ hardware_interface::CallbackReturn MujocoHardwareInterface::on_init(
   // Set up mujoco simulation
   mujoco_interactive::init();
   // TODO filename should be passed as parameter
-  std::string model_xml =
-      "/home/parallels/pupperv3_ws/src/pupper_mujoco_sim/src/urdf/pupper_v3_2_floating_base.xml";
-  // std::string model_xml =
-  //     "/home/parallels/pupperv3_ws/src/pupper_mujoco_sim/src/urdf/pupper_v3_2_fixed_base.xml";
+  std::string share_dir = ament_index_cpp::get_package_share_directory("pupper_mujoco_sim");
+
+  // Options:
+  // 1) "/src/urdf/pupper_v3_2_floating_base.xml"
+  // 2) "/src/urdf/pupper_v3_2_fixed_base.xml"
+  // 3) "/src/urdf/pupper_v3_2_floating_base_mjx_compat.xml"
+  // 4) "/src/urdf/pupper_v3_2_fixed_base_mjx_compat.xml"
+  std::string model_xml = share_dir + "/src/urdf/pupper_v3_2_floating_base.xml";
   float timestep = 1e-4;
   // Construct actuator models
-  // TODO get rid of kp and kd
+  // TODO get rid of kp and kd from actuator params since they are not fixed
   // TODO set from xml file
   ActuatorParams params(
       /*kp=*/7.5,  // value used before command recvd. 7.5 is good for trotting
@@ -193,9 +198,9 @@ MujocoHardwareInterface::export_command_interfaces() {
 hardware_interface::CallbackReturn MujocoHardwareInterface::on_activate(
     const rclcpp_lifecycle::State & /*previous_state*/) {
   // Start calibration thread
-  mujoco_interactive::calibrate_motors_detached();
+  // mujoco_interactive::calibrate_motors_detached();
   // You can comment out calibration and override calibration to be true if you want
-  // mujoco_interactive::is_robot_calibrated_ = true;
+  mujoco_interactive::is_robot_calibrated_ = true;
   RCLCPP_INFO(rclcpp::get_logger("MujocoHardwareInterface"), "Successfully activated!");
   return hardware_interface::CallbackReturn::SUCCESS;
 }
