@@ -72,10 +72,6 @@ hardware_interface::CallbackReturn MujocoHardwareInterface::on_init(
   imu_pitch_ = std::stod(info_.sensors[0].parameters.at("pitch"));
   imu_yaw_ = std::stod(info_.sensors[0].parameters.at("yaw"));
 
-  // TODO(nathan-kau): add support for mujoco imus
-  //   // Set up the IMU
-  //   imu_ = new BNO055(IMU_I2C_DEVICE_NUMBER);
-
   // Set up mujoco simulation
   mujoco_interactive::init();
   // TODO filename should be passed as parameter
