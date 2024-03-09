@@ -72,14 +72,15 @@ hardware_interface::CallbackReturn MujocoHardwareInterface::on_init(
   // Set up mujoco simulation
   mujoco_interactive::init();
   // TODO filename should be passed as parameter
-  std::string share_dir = ament_index_cpp::get_package_share_directory("pupper_mujoco_sim");
+  std::string share_dir = ament_index_cpp::get_package_share_directory("pupper_v3_description");
 
   // Options:
-  // 1) "/src/urdf/pupper_v3_2_floating_base.xml"
-  // 2) "/src/urdf/pupper_v3_2_fixed_base.xml"
-  // 3) "/src/urdf/pupper_v3_2_floating_base_mjx_compat.xml"
-  // 4) "/src/urdf/pupper_v3_2_fixed_base_mjx_compat.xml"
-  std::string model_xml = share_dir + "/src/urdf/pupper_v3_2_floating_base.xml";
+  // 1) "/description/mujoco_xml/pupper_v3_complete.xml"
+  // 2) "/description/mujoco_xml/pupper_v3_complete.mjx.xml"
+  // 3) "/description/mujoco_xml/pupper_v3_complete.mjx.fixed_basexml"
+  // 4) "/description/mujoco_xml/pupper_v3_complete.fixed_base.xml"
+  std::string pupper_model = "/description/mujoco_xml/pupper_v3_complete.xml";
+  std::string model_xml = share_dir + pupper_model;
   float timestep = 1e-4;
   // Construct actuator models
   // TODO get rid of kp and kd from actuator params since they are not fixed
@@ -147,7 +148,18 @@ std::vector<hardware_interface::StateInterface> MujocoHardwareInterface::export_
       "imu_sensor", "linear_acceleration.y", &hw_state_imu_linear_acceleration_[1]));
   state_interfaces.emplace_back(hardware_interface::StateInterface(
       "imu_sensor", "linear_acceleration.z", &hw_state_imu_linear_acceleration_[2]));
-
+  state_interfaces.emplace_back(hardware_interface::StateInterface("mujoco_sensor", "body_pos.x",
+                                                                   &hw_state_mujoco_body_pos_[0]));
+  state_interfaces.emplace_back(hardware_interface::StateInterface("mujoco_sensor", "body_pos.y",
+                                                                   &hw_state_mujoco_body_pos_[1]));
+  state_interfaces.emplace_back(hardware_interface::StateInterface("mujoco_sensor", "body_pos.z",
+                                                                   &hw_state_mujoco_body_pos_[2]));
+  state_interfaces.emplace_back(hardware_interface::StateInterface("mujoco_sensor", "body_vel.x",
+                                                                   &hw_state_mujoco_body_vel_[0]));
+  state_interfaces.emplace_back(hardware_interface::StateInterface("mujoco_sensor", "body_vel.y",
+                                                                   &hw_state_mujoco_body_vel_[1]));
+  state_interfaces.emplace_back(hardware_interface::StateInterface("mujoco_sensor", "body_vel.z",
+                                                                   &hw_state_mujoco_body_vel_[2]));
   return state_interfaces;
 }
 
@@ -244,6 +256,10 @@ hardware_interface::return_type MujocoHardwareInterface::read(const rclcpp::Time
   hw_state_imu_linear_acceleration_[0] = sensor_data.at(7);  // ax
   hw_state_imu_linear_acceleration_[1] = sensor_data.at(8);  // ay
   hw_state_imu_linear_acceleration_[2] = sensor_data.at(9);  // az
+
+  // Ground-truth body position and velocity in world-frame
+  hw_state_mujoco_body_pos_ = mujoco_interactive::base_position();
+  hw_state_mujoco_body_vel_ = mujoco_interactive::base_velocity();
 
   return hardware_interface::return_type::OK;
 }

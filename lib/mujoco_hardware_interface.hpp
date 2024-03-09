@@ -52,6 +52,9 @@ class MujocoHardwareInterface : public hardware_interface::SystemInterface {
   std::array<double, 3> hw_state_imu_linear_acceleration_;  // x, y, z
   double imu_roll_, imu_pitch_, imu_yaw_;
 
+  std::array<double, 3> hw_state_mujoco_body_pos_;  // x, y, z
+  std::array<double, 3> hw_state_mujoco_body_vel_;  // x, y, z
+
   // Actuator homing
   std::vector<int> hw_actuator_homing_stages_;
   std::vector<double> hw_actuator_homing_velocities_;
