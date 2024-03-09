@@ -38,6 +38,9 @@ target_link_libraries(simulate mujoco::mujoco glfw)
 add_executable(basic src/basic.cc)
 target_link_libraries(basic mujoco::mujoco glfw)
 
+add_executable(compile src/compile.cc)
+target_link_libraries(compile mujoco::mujoco glfw)
+
 # add_library(mujoco_core lib/mujoco_core.cpp)
 # target_link_libraries(mujoco_core mujoco::mujoco glfw)
 
@@ -101,6 +104,7 @@ ament_export_dependencies(hardware_interface pluginlib rclcpp rclcpp_lifecycle t
 
 install(TARGETS basic DESTINATION lib/${PROJECT_NAME})
 install(TARGETS simulate DESTINATION lib/${PROJECT_NAME})
+install(TARGETS compile DESTINATION lib/${PROJECT_NAME})
 install(TARGETS mujoco_interactive_test DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
