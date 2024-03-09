@@ -109,8 +109,6 @@ install(TARGETS mujoco_interactive_test DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
 install(DIRECTORY test/launch DESTINATION share/${PROJECT_NAME}/)
-install(DIRECTORY src/urdf DESTINATION share/${PROJECT_NAME}/src)
-install(DIRECTORY src/meshes DESTINATION share/${PROJECT_NAME}/src)
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)

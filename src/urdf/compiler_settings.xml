@@ -1,3 +1,0 @@
-<mujoco model="compiler_settings">
-    <compiler angle="radian" meshdir="../meshes/obj" />
-</mujoco>

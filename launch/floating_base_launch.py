@@ -4,7 +4,7 @@ from ament_index_python.packages import get_package_share_directory
 
 
 def generate_launch_description():
-    share_dir = get_package_share_directory("pupper_mujoco_sim")
+    share_dir = get_package_share_directory("pupper_v3_description")
     return LaunchDescription(
         [
             Node(
@@ -17,7 +17,7 @@ def generate_launch_description():
                     {
                         "publish_rate": 500.0,
                         "model_xml": share_dir
-                        + "/src/urdf/pupper_v3_2_floating_base.xml",
+                        + "/description/mujoco_xml/pupper_v3_complete.xml",
                         "timestep": 0.001,
                     }
                 ],
