@@ -220,11 +220,9 @@ hardware_interface::CallbackReturn MujocoHardwareInterface::on_deactivate(
 
 hardware_interface::return_type MujocoHardwareInterface::read(const rclcpp::Time & /*time*/,
                                                               const rclcpp::Duration &period) {
-  // hw_state_positions_ = mujoco_interactive::actuator_positions();
-  // hw_state_velocities_ = mujoco_interactive::actuator_velocities();
   for (int i = 0; i < info_.joints.size(); i++) {
-    hw_state_positions_[i] = mujoco_interactive::actuator_positions()[i];
-    hw_state_velocities_[i] = mujoco_interactive::actuator_velocities()[i];
+    hw_state_positions_[i] = mujoco_interactive::actuator_position(i);
+    hw_state_velocities_[i] = mujoco_interactive::actuator_velocity(i);
   }
 
   // RCLCPP_INFO(rclcpp::get_logger("MujocoHardwareInterface"),
@@ -277,11 +275,13 @@ hardware_interface::return_type MujocoHardwareInterface::write(
   }
   // RCLCPP_INFO(rclcpp::get_logger("MujocoHardwareInterface"),
   //             "WRITE. com_pos: %f %f %f | %f %f %f | %f %f %f | %f %f %f",
-  //             hw_command_positions_.at(0), hw_command_positions_.at(1), hw_command_positions_.at(2),
-  //             hw_command_positions_.at(3), hw_command_positions_.at(4), hw_command_positions_.at(5),
-  //             hw_command_positions_.at(6), hw_command_positions_.at(7), hw_command_positions_.at(8),
-  //             hw_command_positions_.at(9), hw_command_positions_.at(10),
-  //             hw_command_positions_.at(11));
+  //             hw_command_positions_.at(0), hw_command_positions_.at(1),
+  //             hw_command_positions_.at(2), hw_command_positions_.at(3),
+  //             hw_command_positions_.at(4), hw_command_positions_.at(5),
+  //             hw_command_positions_.at(6), hw_command_positions_.at(7),
+  //             hw_command_positions_.at(8), hw_command_positions_.at(9),
+  //             hw_command_positions_.at(10), hw_command_positions_.at(11));
+
   mujoco_interactive::ActuatorCommand command =
       mujoco_interactive::zero_command(info_.joints.size());
   for (int i = 0; i < info_.joints.size(); i++) {

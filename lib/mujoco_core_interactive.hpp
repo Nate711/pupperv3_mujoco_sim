@@ -2086,13 +2086,13 @@ static float sim_time() {
   return d->time;
 }
 
-static double actuator_velocity_(int i) {
+static double actuator_velocity(int i) {
   std::unique_lock<std::recursive_mutex> lock(mtx);
   int start_idx = floating_base() ? kBaseVelocityVars : 0;
   return d->qvel[i + start_idx];
 }
 
-static double actuator_position_(int i) {
+static double actuator_position(int i) {
   std::unique_lock<std::recursive_mutex> lock(mtx);
   int start_idx = floating_base() ? kOrientationVars + kPositionVars : 0;
   return d->qpos[i + start_idx];
@@ -2144,8 +2144,8 @@ static void update_ctrl_() {
   }
   for (int i = 0; i < m->nu; i++) {
     d->ctrl[i] = actuator_models_[i]->run(
-        latest_command_.kp.at(i), latest_command_.kd.at(i), actuator_position_(i),
-        latest_command_.position_target.at(i), actuator_velocity_(i),
+        latest_command_.kp.at(i), latest_command_.kd.at(i), actuator_position(i),
+        latest_command_.position_target.at(i), actuator_velocity(i),
         latest_command_.velocity_target.at(i), latest_command_.feedforward_torque.at(i));
   }
   // std::cout << "act pos: " << actuator_positions() << std::endl;
