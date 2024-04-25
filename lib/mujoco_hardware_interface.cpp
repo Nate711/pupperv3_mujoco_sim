@@ -220,23 +220,27 @@ hardware_interface::CallbackReturn MujocoHardwareInterface::on_deactivate(
 
 hardware_interface::return_type MujocoHardwareInterface::read(const rclcpp::Time & /*time*/,
                                                               const rclcpp::Duration &period) {
-  hw_state_positions_ = mujoco_interactive::actuator_positions();
-  hw_state_velocities_ = mujoco_interactive::actuator_velocities();
+  // hw_state_positions_ = mujoco_interactive::actuator_positions();
+  // hw_state_velocities_ = mujoco_interactive::actuator_velocities();
+  for (int i = 0; i < info_.joints.size(); i++) {
+    hw_state_positions_[i] = mujoco_interactive::actuator_positions()[i];
+    hw_state_velocities_[i] = mujoco_interactive::actuator_velocities()[i];
+  }
 
-  RCLCPP_INFO(rclcpp::get_logger("MujocoHardwareInterface"),
-              "READ. state_pos: %f %f %f | %f %f %f | %f %f %f | %f %f %f",
-              hw_state_positions_.at(0), hw_state_positions_.at(1), hw_state_positions_.at(2),
-              hw_state_positions_.at(3), hw_state_positions_.at(4), hw_state_positions_.at(5),
-              hw_state_positions_.at(6), hw_state_positions_.at(7), hw_state_positions_.at(8),
-              hw_state_positions_.at(9), hw_state_positions_.at(10), hw_state_positions_.at(11));
+  // RCLCPP_INFO(rclcpp::get_logger("MujocoHardwareInterface"),
+  //             "READ. state_pos: %f %f %f | %f %f %f | %f %f %f | %f %f %f",
+  //             hw_state_positions_.at(0), hw_state_positions_.at(1), hw_state_positions_.at(2),
+  //             hw_state_positions_.at(3), hw_state_positions_.at(4), hw_state_positions_.at(5),
+  //             hw_state_positions_.at(6), hw_state_positions_.at(7), hw_state_positions_.at(8),
+  //             hw_state_positions_.at(9), hw_state_positions_.at(10), hw_state_positions_.at(11));
 
   // Read the IMU
   std::vector<double> sensor_data = mujoco_interactive::sensor_data();
-  RCLCPP_INFO(rclcpp::get_logger("MujocoHardwareInterface"),
-              "Quat: %f %f %f %f | Gyro: %f %f %f | Acc: %f %f %f", sensor_data.at(0),
-              sensor_data.at(1), sensor_data.at(2), sensor_data.at(3), sensor_data.at(4),
-              sensor_data.at(5), sensor_data.at(6), sensor_data.at(7), sensor_data.at(8),
-              sensor_data.at(9));
+  // RCLCPP_INFO(rclcpp::get_logger("MujocoHardwareInterface"),
+  //             "Quat: %f %f %f %f | Gyro: %f %f %f | Acc: %f %f %f", sensor_data.at(0),
+  //             sensor_data.at(1), sensor_data.at(2), sensor_data.at(3), sensor_data.at(4),
+  //             sensor_data.at(5), sensor_data.at(6), sensor_data.at(7), sensor_data.at(8),
+  //             sensor_data.at(9));
 
   // Note: We do not correct for the orientation of the IMU because we define it as
   // aligned with body XYZ axes in the model xml
@@ -271,22 +275,22 @@ hardware_interface::return_type MujocoHardwareInterface::write(
                  "Robot not calibrated. Skipping hw interface write");
     return hardware_interface::return_type::OK;
   }
-  RCLCPP_INFO(rclcpp::get_logger("MujocoHardwareInterface"),
-              "WRITE. com_pos: %f %f %f | %f %f %f | %f %f %f | %f %f %f",
-              hw_command_positions_.at(0), hw_command_positions_.at(1), hw_command_positions_.at(2),
-              hw_command_positions_.at(3), hw_command_positions_.at(4), hw_command_positions_.at(5),
-              hw_command_positions_.at(6), hw_command_positions_.at(7), hw_command_positions_.at(8),
-              hw_command_positions_.at(9), hw_command_positions_.at(10),
-              hw_command_positions_.at(11));
+  // RCLCPP_INFO(rclcpp::get_logger("MujocoHardwareInterface"),
+  //             "WRITE. com_pos: %f %f %f | %f %f %f | %f %f %f | %f %f %f",
+  //             hw_command_positions_.at(0), hw_command_positions_.at(1), hw_command_positions_.at(2),
+  //             hw_command_positions_.at(3), hw_command_positions_.at(4), hw_command_positions_.at(5),
+  //             hw_command_positions_.at(6), hw_command_positions_.at(7), hw_command_positions_.at(8),
+  //             hw_command_positions_.at(9), hw_command_positions_.at(10),
+  //             hw_command_positions_.at(11));
   mujoco_interactive::ActuatorCommand command =
       mujoco_interactive::zero_command(info_.joints.size());
   for (int i = 0; i < info_.joints.size(); i++) {
-    command.kp = hw_command_kps_;
-    command.kd = hw_command_kds_;
+    command.kp[i] = hw_command_kps_[i];
+    command.kd[i] = hw_command_kds_[i];
 
-    command.position_target = hw_command_positions_;
-    command.velocity_target = hw_command_velocities_;
-    command.feedforward_torque = hw_command_efforts_;
+    command.position_target[i] = hw_command_positions_[i];
+    command.velocity_target[i] = hw_command_velocities_[i];
+    command.feedforward_torque[i] = hw_command_efforts_[i];
   }
   mujoco_interactive::set_actuator_command(command);
   return hardware_interface::return_type::OK;
