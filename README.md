@@ -1,5 +1,6 @@
 # Prereqs
-Clone "pupper_interfaces" package (https://github.com/Nate711/pupper_interfaces) into your ROS2 workspace src folder
+* Clone "pupper_interfaces" package (https://github.com/Nate711/pupper_interfaces) into your ROS2 workspace src folder
+* Install mujoco v2.3.1
 
 # Install
 Clone this repo into your ROS2 workspace src folder
@@ -11,6 +12,12 @@ source /install/local_setup.bash
 ```
 
 # Usage
+Using the simulator as a hardware interface
+```bash
+ros2 launch pupper_mujoco_sim test_hw_interface.launch.py
+```
+
+Using the simulator as a regular ros node with subscription to joint commands
 ```bash
 ros2 launch pupper_mujoco_sim floating_base_launch.py 
 ```
