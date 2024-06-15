@@ -1,6 +1,7 @@
 # Prereqs
-* Clone "pupper_interfaces" package (https://github.com/Nate711/pupper_interfaces) into your ROS2 workspace src folder
-* Install mujoco v2.3.1
+* ARM computer
+* If you have a x86 computer. Download Mujoco 2.3.1 release https://github.com/google-deepmind/mujoco/releases/download/2.3.1/mujoco-2.3.1-linux-x86_64.tar.gz and replace the existing third_party/mujoco-2.3.1 directory.
+* pupper_v3_description (https://github.com/G-Levine/pupper_v3_description) repo in the same ros workspace 
 
 # Install
 Clone this repo into your ROS2 workspace src folder
