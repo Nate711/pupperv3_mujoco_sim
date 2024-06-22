@@ -71,28 +71,30 @@ hardware_interface::CallbackReturn MujocoHardwareInterface::on_init(
 
   // Set up mujoco simulation
   mujoco_interactive::init();
-  // TODO filename should be passed as parameter
-  std::string share_dir = ament_index_cpp::get_package_share_directory("pupper_v3_description");
 
-  // Options:
-  // 1) "/description/mujoco_xml/pupper_v3_complete.xml"
-  // 2) "/description/mujoco_xml/pupper_v3_complete.mjx.xml"
-  // 3) "/description/mujoco_xml/pupper_v3_complete.mjx.fixed_basexml"
-  // 4) "/description/mujoco_xml/pupper_v3_complete.fixed_base.xml"
-  std::string pupper_model = "/description/mujoco_xml/pupper_v3_complete.xml";
-  std::string model_xml = share_dir + pupper_model;
-  float timestep = 1e-4;
-  // Construct actuator models
+  // Get model xml file based on parameters
+  std::string share_dir = ament_index_cpp::get_package_share_directory("pupper_v3_description");
+  bool use_fixed_base = std::stoi(info_.hardware_parameters.at("fixed_base"));
+  std::string pupper_xml;
+  if (use_fixed_base) {
+    pupper_xml = "pupper_v3_complete.fixed_base.xml";
+  } else {
+    pupper_xml = "pupper_v3_complete.xml";
+  }
+  std::string model_xml = share_dir + "/description/mujoco_xml/" + pupper_xml;
+
+  float timestep = std::stod(info_.hardware_parameters.at("timestep"));
+
+  // Construct actuator models based on parameters
   // TODO get rid of kp and kd from actuator params since they are not fixed
-  // TODO set from xml file
   ActuatorParams params(
-      /*kp=*/7.5,  // value used before command recvd. 7.5 is good for trotting
-      /*kd=*/0.5,  // value used before command recvd. 0.5 is good for trotting
-      /*bus_voltage =*/24.0,
-      /*kt=*/0.04,
-      /*phase_resistance=*/0.7,
-      /*saturation_torque=*/4.5,
-      /*software_torque_limit =*/3.0);
+      /*kp=*/0.0,
+      /*kd=*/0.0,
+      /*bus_voltage =*/std::stod(info_.hardware_parameters.at("bus_voltage")),
+      /*kt=*/std::stod(info_.hardware_parameters.at("kt")),
+      /*phase_resistance=*/std::stod(info_.hardware_parameters.at("phase_resistance")),
+      /*saturation_torque=*/std::stod(info_.hardware_parameters.at("saturation_torque")),
+      /*software_torque_limit =*/std::stod(info_.hardware_parameters.at("software_torque_limit")));
   PIDActuatorModel actuator_model(params);
   std::vector<std::shared_ptr<ActuatorModelInterface>> actuator_models(
       info_.joints.size(), std::make_shared<PIDActuatorModel>(params));
@@ -125,6 +127,8 @@ std::vector<hardware_interface::StateInterface> MujocoHardwareInterface::export_
         info_.joints[i].name, hardware_interface::HW_IF_POSITION, &hw_state_positions_[i]));
     state_interfaces.emplace_back(hardware_interface::StateInterface(
         info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &hw_state_velocities_[i]));
+    // state_interfaces.emplace_back(hardware_interface::StateInterface(
+    //     info_.joints[i].name, hardware_interface::HW_IF_EFFORT, &hw_state_[i]));
   }
 
   // Add IMU state interfaces
