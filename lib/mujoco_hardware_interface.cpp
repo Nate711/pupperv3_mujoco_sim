@@ -65,6 +65,11 @@ hardware_interface::CallbackReturn MujocoHardwareInterface::on_init(
     hw_actuator_is_homed_.push_back(false);
   }
 
+  if (info_.hardware_parameters.count("use_imu") &&
+      (info_.hardware_parameters.at("use_imu") == "false" ||
+       info_.hardware_parameters.at("use_imu") == "False")) {
+    use_imu_ = false;
+  }
   imu_roll_ = std::stod(info_.sensors[0].parameters.at("roll"));
   imu_pitch_ = std::stod(info_.sensors[0].parameters.at("pitch"));
   imu_yaw_ = std::stod(info_.sensors[0].parameters.at("yaw"));
@@ -94,7 +99,8 @@ hardware_interface::CallbackReturn MujocoHardwareInterface::on_init(
       /*kt=*/std::stod(info_.hardware_parameters.at("kt")),
       /*phase_resistance=*/std::stod(info_.hardware_parameters.at("phase_resistance")),
       /*saturation_torque=*/std::stod(info_.hardware_parameters.at("saturation_torque")),
-      /*software_torque_limit =*/std::stod(info_.hardware_parameters.at("software_torque_limit")));
+      /*software_torque_limit =*/
+      std::stod(info_.hardware_parameters.at("software_torque_limit")));
   PIDActuatorModel actuator_model(params);
   std::vector<std::shared_ptr<ActuatorModelInterface>> actuator_models(
       info_.joints.size(), std::make_shared<PIDActuatorModel>(params));
@@ -234,7 +240,8 @@ hardware_interface::return_type MujocoHardwareInterface::read(const rclcpp::Time
   //             hw_state_positions_.at(0), hw_state_positions_.at(1), hw_state_positions_.at(2),
   //             hw_state_positions_.at(3), hw_state_positions_.at(4), hw_state_positions_.at(5),
   //             hw_state_positions_.at(6), hw_state_positions_.at(7), hw_state_positions_.at(8),
-  //             hw_state_positions_.at(9), hw_state_positions_.at(10), hw_state_positions_.at(11));
+  //             hw_state_positions_.at(9), hw_state_positions_.at(10),
+  //             hw_state_positions_.at(11));
 
   // Read the IMU
   std::vector<double> sensor_data = mujoco_interactive::sensor_data();
@@ -248,20 +255,37 @@ hardware_interface::return_type MujocoHardwareInterface::read(const rclcpp::Time
   // aligned with body XYZ axes in the model xml
 
   // Note: Mujoco puts real component first, which matches this constructor
-  hw_state_imu_orientation_[0] = sensor_data.at(1);  // x
-  hw_state_imu_orientation_[1] = sensor_data.at(2);  // y
-  hw_state_imu_orientation_[2] = sensor_data.at(3);  // z
-  hw_state_imu_orientation_[3] = sensor_data.at(0);  // w
+  if (use_imu_) {
+    hw_state_imu_orientation_[0] = sensor_data.at(1);  // x
+    hw_state_imu_orientation_[1] = sensor_data.at(2);  // y
+    hw_state_imu_orientation_[2] = sensor_data.at(3);  // z
+    hw_state_imu_orientation_[3] = sensor_data.at(0);  // w
 
-  // Angular velocity of body in body-frame
-  hw_state_imu_angular_velocity_[0] = sensor_data.at(4);  // wx
-  hw_state_imu_angular_velocity_[1] = sensor_data.at(5);  // wy
-  hw_state_imu_angular_velocity_[2] = sensor_data.at(6);  // wz
+    // Angular velocity of body in body-frame
+    hw_state_imu_angular_velocity_[0] = sensor_data.at(4);  // wx
+    hw_state_imu_angular_velocity_[1] = sensor_data.at(5);  // wy
+    hw_state_imu_angular_velocity_[2] = sensor_data.at(6);  // wz
 
-  // Linear acceleration of body in body-frame
-  hw_state_imu_linear_acceleration_[0] = sensor_data.at(7);  // ax
-  hw_state_imu_linear_acceleration_[1] = sensor_data.at(8);  // ay
-  hw_state_imu_linear_acceleration_[2] = sensor_data.at(9);  // az
+    // Linear acceleration of body in body-frame
+    hw_state_imu_linear_acceleration_[0] = sensor_data.at(7);  // ax
+    hw_state_imu_linear_acceleration_[1] = sensor_data.at(8);  // ay
+    hw_state_imu_linear_acceleration_[2] = sensor_data.at(9);  // az
+  } else {
+    hw_state_imu_orientation_[0] = 0.0;  // x
+    hw_state_imu_orientation_[1] = 0.0;  // y
+    hw_state_imu_orientation_[2] = 0.0;  // z
+    hw_state_imu_orientation_[3] = 1.0;  // w
+
+    // Angular velocity of body in body-frame
+    hw_state_imu_angular_velocity_[0] = 0.0;  // wx
+    hw_state_imu_angular_velocity_[1] = 0.0;  // wy
+    hw_state_imu_angular_velocity_[2] = 0.0;  // wz
+
+    // Linear acceleration of body in body-frame
+    hw_state_imu_linear_acceleration_[0] = 0.0;  // ax
+    hw_state_imu_linear_acceleration_[1] = 0.0;  // ay
+    hw_state_imu_linear_acceleration_[2] = 0.0;  // az
+  }
 
   // Ground-truth body position and velocity in world-frame
   hw_state_mujoco_body_pos_ = mujoco_interactive::base_position();

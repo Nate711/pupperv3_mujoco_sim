@@ -46,6 +46,8 @@ class MujocoHardwareInterface : public hardware_interface::SystemInterface {
                                         const rclcpp::Duration &period) override;
 
  private:
+  bool use_imu_ = true;
+
   // IMU state
   std::array<double, 4> hw_state_imu_orientation_;          // x, y, z, w
   std::array<double, 3> hw_state_imu_angular_velocity_;     // x, y, z
