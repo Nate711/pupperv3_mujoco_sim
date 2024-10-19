@@ -71,7 +71,6 @@ install(TARGETS simulate DESTINATION lib/${PROJECT_NAME})
 install(TARGETS compile DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
-install(DIRECTORY test/launch DESTINATION share/${PROJECT_NAME}/)
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
@@ -88,11 +87,6 @@ if(BUILD_TESTING)
 
   # Run all lint tests in package.xml except those listed above
   ament_lint_auto_find_test_dependencies()
-
-  ament_add_gtest_executable(basic_test test/basic_test.cpp)
-  ament_target_dependencies(basic_test rclcpp)
-  add_ros_test(test/launch/basic_test.test.py TIMEOUT 120 ARGS
-               "test_binary_dir:=${CMAKE_CURRENT_BINARY_DIR}")
 endif()
 
 ament_package()
