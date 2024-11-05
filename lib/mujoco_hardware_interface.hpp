@@ -4,10 +4,12 @@
 #include <string>
 #include <vector>
 
+#include "fixed_size_queue.hpp"
 #include "hardware_interface/handle.hpp"
 #include "hardware_interface/hardware_info.hpp"
 #include "hardware_interface/system_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
+#include "mujoco_core_interactive.hpp"
 #include "rclcpp/clock.hpp"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/macros.hpp"
@@ -49,6 +51,7 @@ class MujocoHardwareInterface : public hardware_interface::SystemInterface {
   bool use_imu_ = true;
 
   // IMU state
+  FixedSizeQueue<std::vector<double>> imu_buffer_;
   std::array<double, 4> hw_state_imu_orientation_;          // x, y, z, w
   std::array<double, 3> hw_state_imu_angular_velocity_;     // x, y, z
   std::array<double, 3> hw_state_imu_linear_acceleration_;  // x, y, z
@@ -80,6 +83,7 @@ class MujocoHardwareInterface : public hardware_interface::SystemInterface {
   std::vector<double> hw_state_velocities_;
 
   // Actuator commands
+  FixedSizeQueue<mujoco_interactive::ActuatorCommand> command_buffer_;
   std::vector<double> hw_command_positions_;
   std::vector<double> hw_command_velocities_;
   std::vector<double> hw_command_efforts_;

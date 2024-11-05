@@ -2,27 +2,25 @@
 
 #include <sched.h>
 #include <sys/mman.h>
-#include <chrono>
-#include <cmath>
-#include <limits>
-#include <memory>
-#include <vector>
-
 #include <time.h>
 #include <unistd.h>
 
+#include <ament_index_cpp/get_package_share_directory.hpp>
+#include <chrono>
+#include <cmath>
 #include <fstream>
 #include <iostream>
+#include <limits>
+#include <memory>
 #include <string>
+#include <vector>
 
-#include <ament_index_cpp/get_package_share_directory.hpp>
+#include "actuator_model.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "rclcpp/rclcpp.hpp"
 
-#include "actuator_model.hpp"
-#include "mujoco_core_interactive.hpp"
-
 namespace mujoco_hardware_interface {
+
 MujocoHardwareInterface::~MujocoHardwareInterface() {
   // Deactivate everything when ctrl-c is pressed
   on_deactivate(rclcpp_lifecycle::State());
@@ -38,6 +36,12 @@ hardware_interface::CallbackReturn MujocoHardwareInterface::on_init(
   hw_state_positions_.resize(info_.joints.size(), 0.0);
   hw_state_velocities_.resize(info_.joints.size(), 0.0);
 
+  size_t command_latency_timesteps =
+      info_.hardware_parameters.count("command_latency_timesteps")
+          ? std::stoi(info_.hardware_parameters.at("command_latency_timesteps"))
+          : 0;
+  command_buffer_.fill(command_latency_timesteps,
+                       mujoco_interactive::zero_command(info_.joints.size()));
   hw_command_positions_.resize(info_.joints.size(), 0.0);
   hw_command_velocities_.resize(info_.joints.size(), 0.0);
   hw_command_efforts_.resize(info_.joints.size(), 0.0);
@@ -65,6 +69,12 @@ hardware_interface::CallbackReturn MujocoHardwareInterface::on_init(
     hw_actuator_is_homed_.push_back(false);
   }
 
+  if (info_.hardware_parameters.count("backlash") &&
+      (info_.hardware_parameters.at("backlash") == "true" ||
+       info_.hardware_parameters.at("backlash") == "True")) {
+    mujoco_interactive::backlash_ = true;
+  }
+
   if (info_.hardware_parameters.count("use_imu") &&
       (info_.hardware_parameters.at("use_imu") == "false" ||
        info_.hardware_parameters.at("use_imu") == "False")) {
@@ -74,14 +84,26 @@ hardware_interface::CallbackReturn MujocoHardwareInterface::on_init(
   imu_pitch_ = std::stod(info_.sensors[0].parameters.at("pitch"));
   imu_yaw_ = std::stod(info_.sensors[0].parameters.at("yaw"));
 
+  // Initialize imu_buffer_
+  size_t latency_timesteps = info_.hardware_parameters.count("imu_latency_timesteps")
+                                 ? std::stoi(info_.hardware_parameters.at("imu_latency_timesteps"))
+                                 : 0;
+  imu_buffer_.fill(latency_timesteps, {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
+
   // Set up mujoco simulation
   mujoco_interactive::init();
 
   // Get model xml file based on parameters
   std::string share_dir = ament_index_cpp::get_package_share_directory("pupper_v3_description");
   bool use_fixed_base = std::stoi(info_.hardware_parameters.at("fixed_base"));
+  std::string backlash_str = info_.hardware_parameters.count("backlash")
+                                 ? info_.hardware_parameters.at("backlash")
+                                 : "false";
+  bool backlash = backlash_str == "true" || backlash_str == "True";
   std::string pupper_xml;
-  if (use_fixed_base) {
+  if (backlash) {
+    pupper_xml = "pupper_v3_complete.backlash.xml";
+  } else if (use_fixed_base) {
     pupper_xml = "pupper_v3_complete.fixed_base.xml";
   } else {
     pupper_xml = "pupper_v3_complete.xml";
@@ -97,8 +119,10 @@ hardware_interface::CallbackReturn MujocoHardwareInterface::on_init(
       /*kd=*/0.0,
       /*bus_voltage =*/std::stod(info_.hardware_parameters.at("bus_voltage")),
       /*kt=*/std::stod(info_.hardware_parameters.at("kt")),
-      /*phase_resistance=*/std::stod(info_.hardware_parameters.at("phase_resistance")),
-      /*saturation_torque=*/std::stod(info_.hardware_parameters.at("saturation_torque")),
+      /*phase_resistance=*/
+      std::stod(info_.hardware_parameters.at("phase_resistance")),
+      /*saturation_torque=*/
+      std::stod(info_.hardware_parameters.at("saturation_torque")),
       /*software_torque_limit =*/
       std::stod(info_.hardware_parameters.at("software_torque_limit")));
   PIDActuatorModel actuator_model(params);
@@ -134,7 +158,8 @@ std::vector<hardware_interface::StateInterface> MujocoHardwareInterface::export_
     state_interfaces.emplace_back(hardware_interface::StateInterface(
         info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &hw_state_velocities_[i]));
     // state_interfaces.emplace_back(hardware_interface::StateInterface(
-    //     info_.joints[i].name, hardware_interface::HW_IF_EFFORT, &hw_state_[i]));
+    //     info_.joints[i].name, hardware_interface::HW_IF_EFFORT,
+    //     &hw_state_[i]));
   }
 
   // Add IMU state interfaces
@@ -214,7 +239,8 @@ hardware_interface::CallbackReturn MujocoHardwareInterface::on_activate(
     const rclcpp_lifecycle::State & /*previous_state*/) {
   // Start calibration thread
   // mujoco_interactive::calibrate_motors_detached();
-  // You can comment out calibration and override calibration to be true if you want
+  // You can comment out calibration and override calibration to be true if you
+  // want
   mujoco_interactive::is_robot_calibrated_ = true;
   RCLCPP_INFO(rclcpp::get_logger("MujocoHardwareInterface"), "Successfully activated!");
   return hardware_interface::CallbackReturn::SUCCESS;
@@ -237,39 +263,42 @@ hardware_interface::return_type MujocoHardwareInterface::read(const rclcpp::Time
 
   // RCLCPP_INFO(rclcpp::get_logger("MujocoHardwareInterface"),
   //             "READ. state_pos: %f %f %f | %f %f %f | %f %f %f | %f %f %f",
-  //             hw_state_positions_.at(0), hw_state_positions_.at(1), hw_state_positions_.at(2),
-  //             hw_state_positions_.at(3), hw_state_positions_.at(4), hw_state_positions_.at(5),
-  //             hw_state_positions_.at(6), hw_state_positions_.at(7), hw_state_positions_.at(8),
-  //             hw_state_positions_.at(9), hw_state_positions_.at(10),
-  //             hw_state_positions_.at(11));
+  //             hw_state_positions_.at(0), hw_state_positions_.at(1),
+  //             hw_state_positions_.at(2), hw_state_positions_.at(3),
+  //             hw_state_positions_.at(4), hw_state_positions_.at(5),
+  //             hw_state_positions_.at(6), hw_state_positions_.at(7),
+  //             hw_state_positions_.at(8), hw_state_positions_.at(9),
+  //             hw_state_positions_.at(10), hw_state_positions_.at(11));
 
   // Read the IMU
-  std::vector<double> sensor_data = mujoco_interactive::sensor_data();
+  auto lagged_sensor_data = imu_buffer_.enqueue(mujoco_interactive::sensor_data());
+
   // RCLCPP_INFO(rclcpp::get_logger("MujocoHardwareInterface"),
-  //             "Quat: %f %f %f %f | Gyro: %f %f %f | Acc: %f %f %f", sensor_data.at(0),
-  //             sensor_data.at(1), sensor_data.at(2), sensor_data.at(3), sensor_data.at(4),
-  //             sensor_data.at(5), sensor_data.at(6), sensor_data.at(7), sensor_data.at(8),
+  //             "Quat: %f %f %f %f | Gyro: %f %f %f | Acc: %f %f %f",
+  //             sensor_data.at(0), sensor_data.at(1), sensor_data.at(2),
+  //             sensor_data.at(3), sensor_data.at(4), sensor_data.at(5),
+  //             sensor_data.at(6), sensor_data.at(7), sensor_data.at(8),
   //             sensor_data.at(9));
 
-  // Note: We do not correct for the orientation of the IMU because we define it as
-  // aligned with body XYZ axes in the model xml
+  // Note: We do not correct for the orientation of the IMU because we define it
+  // as aligned with body XYZ axes in the model xml
 
   // Note: Mujoco puts real component first, which matches this constructor
   if (use_imu_) {
-    hw_state_imu_orientation_[0] = sensor_data.at(1);  // x
-    hw_state_imu_orientation_[1] = sensor_data.at(2);  // y
-    hw_state_imu_orientation_[2] = sensor_data.at(3);  // z
-    hw_state_imu_orientation_[3] = sensor_data.at(0);  // w
+    hw_state_imu_orientation_[0] = lagged_sensor_data.at(1);  // x
+    hw_state_imu_orientation_[1] = lagged_sensor_data.at(2);  // y
+    hw_state_imu_orientation_[2] = lagged_sensor_data.at(3);  // z
+    hw_state_imu_orientation_[3] = lagged_sensor_data.at(0);  // w
 
     // Angular velocity of body in body-frame
-    hw_state_imu_angular_velocity_[0] = sensor_data.at(4);  // wx
-    hw_state_imu_angular_velocity_[1] = sensor_data.at(5);  // wy
-    hw_state_imu_angular_velocity_[2] = sensor_data.at(6);  // wz
+    hw_state_imu_angular_velocity_[0] = lagged_sensor_data.at(4);  // wx
+    hw_state_imu_angular_velocity_[1] = lagged_sensor_data.at(5);  // wy
+    hw_state_imu_angular_velocity_[2] = lagged_sensor_data.at(6);  // wz
 
     // Linear acceleration of body in body-frame
-    hw_state_imu_linear_acceleration_[0] = sensor_data.at(7);  // ax
-    hw_state_imu_linear_acceleration_[1] = sensor_data.at(8);  // ay
-    hw_state_imu_linear_acceleration_[2] = sensor_data.at(9);  // az
+    hw_state_imu_linear_acceleration_[0] = lagged_sensor_data.at(7);  // ax
+    hw_state_imu_linear_acceleration_[1] = lagged_sensor_data.at(8);  // ay
+    hw_state_imu_linear_acceleration_[2] = lagged_sensor_data.at(9);  // az
   } else {
     hw_state_imu_orientation_[0] = 0.0;  // x
     hw_state_imu_orientation_[1] = 0.0;  // y
@@ -320,7 +349,8 @@ hardware_interface::return_type MujocoHardwareInterface::write(
     command.velocity_target[i] = hw_command_velocities_[i];
     command.feedforward_torque[i] = hw_command_efforts_[i];
   }
-  mujoco_interactive::set_actuator_command(command);
+  auto lagged_command = command_buffer_.enqueue(command);
+  mujoco_interactive::set_actuator_command(lagged_command);
   return hardware_interface::return_type::OK;
 }
 

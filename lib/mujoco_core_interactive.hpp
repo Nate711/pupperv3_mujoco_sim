@@ -15,6 +15,8 @@
 #ifndef MUJOCO_CORE_INTERACTIVE_H
 #define MUJOCO_CORE_INTERACTIVE_H
 
+#include <mujoco/mjxmacro.h>
+
 #include <chrono>
 #include <cstdio>
 #include <cstring>
@@ -24,13 +26,10 @@
 #include <string>
 #include <thread>
 
-#include <mujoco/mjxmacro.h>
+#include "actuator_model_interface.hpp"
+#include "array_safety.h"
 #include "uitools.h"
 #include "utils.hpp"
-
-#include "actuator_model_interface.hpp"
-
-#include "array_safety.h"
 
 namespace mju = ::mujoco::sample_util;
 
@@ -249,6 +248,7 @@ struct ActuatorCommand {
   std::vector<double> feedforward_torque;
 };
 
+static bool backlash_ = false;
 typedef std::vector<std::shared_ptr<ActuatorModelInterface>> ActuatorModelVector;
 static ActuatorModelVector actuator_models_;
 
@@ -2076,10 +2076,10 @@ static bool floating_base() {
   return m->nq != m->nu;
 }
 
-static int n_actuators() {
-  check_model(m);
-  return m->nu;
-}
+// static int n_actuators() {
+//   check_model(m);
+//   return m->nu;
+// }
 
 static float sim_time() {
   check_data(d);
@@ -2089,13 +2089,13 @@ static float sim_time() {
 static double actuator_velocity(int i) {
   std::unique_lock<std::recursive_mutex> lock(mtx);
   int start_idx = floating_base() ? kBaseVelocityVars : 0;
-  return d->qvel[i + start_idx];
+  return d->qvel[i * (1 + backlash_) + start_idx];
 }
 
 static double actuator_position(int i) {
   std::unique_lock<std::recursive_mutex> lock(mtx);
   int start_idx = floating_base() ? kOrientationVars + kPositionVars : 0;
-  return d->qpos[i + start_idx];
+  return d->qpos[i * (1 + backlash_) + start_idx];
 }
 
 /* Sets actuator models by copying pointer vector by value
@@ -2106,23 +2106,28 @@ static void set_actuator_models(const ActuatorModelVector &actuator_models) {
   actuator_models_ = actuator_models;
 }
 
-static std::vector<double> actuator_positions() {
-  std::unique_lock<std::recursive_mutex> lock(mtx);
-  int start_idx = floating_base() ? kOrientationVars + kPositionVars : 0;
-  return std::vector<double>(d->qpos + start_idx, d->qpos + start_idx + n_actuators());
-}
+// static std::vector<double> actuator_positions() {
+//   std::unique_lock<std::recursive_mutex> lock(mtx);
+//   int start_idx = floating_base() ? kOrientationVars + kPositionVars : 0;
+//   std::vector<double> positions;
+//   for (int i = start_idx; i < start_idx + n_actuators() * 2; i += 2) {
+//     positions.push_back(d->qpos[i]);
+//   }
+//   return positions;
+// }
 
-static std::vector<double> actuator_velocities() {
-  std::unique_lock<std::recursive_mutex> lock(mtx);
-  int start_idx = floating_base() ? kBaseVelocityVars : 0;
-  return std::vector<double>(d->qvel + start_idx, d->qvel + start_idx + n_actuators());
-}
+// static std::vector<double> actuator_velocities() {
+//   std::unique_lock<std::recursive_mutex> lock(mtx);
+//   int start_idx = floating_base() ? kBaseVelocityVars : 0;
+//   return std::vector<double>(d->qvel + start_idx,
+//                              d->qvel + start_idx + n_actuators());
+// }
 
 /* Actual actuator efforts */
-static std::vector<double> actuator_efforts() {
-  std::unique_lock<std::recursive_mutex> lock(mtx);
-  return std::vector<double>(d->ctrl, d->ctrl + n_actuators());
-}
+// static std::vector<double> actuator_efforts() {
+//   std::unique_lock<std::recursive_mutex> lock(mtx);
+//   return std::vector<double>(d->ctrl, d->ctrl + n_actuators());
+// }
 
 static std::vector<double> sensor_data() {
   std::unique_lock<std::recursive_mutex> lock(mtx);
@@ -2234,9 +2239,8 @@ static void calibrate_motors_blocking() {
   auto uncalibrated = [calibration_threshold](int i) { return i < calibration_threshold; };
 
   while (std::any_of(loops_at_endstop.begin(), loops_at_endstop.end(), uncalibrated)) {
-    auto vels = actuator_velocities();
     for (int motor_idx = 0; motor_idx < m->nu; motor_idx++) {
-      if (abs(vels.at(motor_idx)) < speed_threshold) {
+      if (abs(actuator_velocity(motor_idx)) < speed_threshold) {
         loops_at_endstop.at(motor_idx) += 1;
       }
       std::cout << "idx: " << motor_idx << " loops_at_endstop: " << loops_at_endstop.at(motor_idx)
