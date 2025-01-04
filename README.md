@@ -4,8 +4,10 @@
 * pupper_v3_description (https://github.com/G-Levine/pupper_v3_description) repo in the same ros workspace 
 
 # Install
-Clone this repo into your ROS2 workspace src folder
 ```bash
+sudo apt install -y libglfw3-dev
+cd ${YOUR_WORKSPACE_FOLDER}/src
+git clone https://github.com/Nate711/pupperv3_mujoco_sim.git
 source /opt/ros/humble/setup.bash
 cd ${YOUR_WORKSPACE_FOLDER}
 colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_EXPORT_COMPILE_COMMANDS=1
